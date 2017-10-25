@@ -42,6 +42,7 @@ type Core interface {
 	Write(Entry, []Field) error
 	// Sync flushes buffered logs (if any).
 	Sync() error
+
 	// NOT thread-safe
 	SetWriteSyncer(ws WriteSyncer)
 }

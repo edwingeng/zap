@@ -168,38 +168,38 @@ func (log *Logger) With(fields ...zapcore.Field) *Logger {
 // Check returns a CheckedEntry if logging a message at the specified level
 // is enabled. It's a completely optional optimization; in high-performance
 // applications, Check can help avoid allocating a slice to hold fields.
-func (log *Logger) Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
-	return log.check(lvl, msg)
+func (log *Logger) Check(caller *zapcore.EntryCaller, lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
+	return log.check(lvl, msg, caller)
 }
 
 // Debug logs a message at DebugLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Debug(msg string, fields ...zapcore.Field) {
-	if ce := log.check(DebugLevel, msg); ce != nil {
+func (log *Logger) Debug(caller *zapcore.EntryCaller, msg string, fields ...zapcore.Field) {
+	if ce := log.check(DebugLevel, msg, caller); ce != nil {
 		ce.Write(fields...)
 	}
 }
 
 // Info logs a message at InfoLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Info(msg string, fields ...zapcore.Field) {
-	if ce := log.check(InfoLevel, msg); ce != nil {
+func (log *Logger) Info(caller *zapcore.EntryCaller, msg string, fields ...zapcore.Field) {
+	if ce := log.check(InfoLevel, msg, caller); ce != nil {
 		ce.Write(fields...)
 	}
 }
 
 // Warn logs a message at WarnLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Warn(msg string, fields ...zapcore.Field) {
-	if ce := log.check(WarnLevel, msg); ce != nil {
+func (log *Logger) Warn(caller *zapcore.EntryCaller, msg string, fields ...zapcore.Field) {
+	if ce := log.check(WarnLevel, msg, caller); ce != nil {
 		ce.Write(fields...)
 	}
 }
 
 // Error logs a message at ErrorLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Error(msg string, fields ...zapcore.Field) {
-	if ce := log.check(ErrorLevel, msg); ce != nil {
+func (log *Logger) Error(caller *zapcore.EntryCaller, msg string, fields ...zapcore.Field) {
+	if ce := log.check(ErrorLevel, msg, caller); ce != nil {
 		ce.Write(fields...)
 	}
 }
@@ -210,8 +210,8 @@ func (log *Logger) Error(msg string, fields ...zapcore.Field) {
 // If the logger is in development mode, it then panics (DPanic means
 // "development panic"). This is useful for catching errors that are
 // recoverable, but shouldn't ever happen.
-func (log *Logger) DPanic(msg string, fields ...zapcore.Field) {
-	if ce := log.check(DPanicLevel, msg); ce != nil {
+func (log *Logger) DPanic(caller *zapcore.EntryCaller, msg string, fields ...zapcore.Field) {
+	if ce := log.check(DPanicLevel, msg, caller); ce != nil {
 		ce.Write(fields...)
 	}
 }
@@ -220,8 +220,8 @@ func (log *Logger) DPanic(msg string, fields ...zapcore.Field) {
 // at the log site, as well as any fields accumulated on the logger.
 //
 // The logger then panics, even if logging at PanicLevel is disabled.
-func (log *Logger) Panic(msg string, fields ...zapcore.Field) {
-	if ce := log.check(PanicLevel, msg); ce != nil {
+func (log *Logger) Panic(caller *zapcore.EntryCaller, msg string, fields ...zapcore.Field) {
+	if ce := log.check(PanicLevel, msg, caller); ce != nil {
 		ce.Write(fields...)
 	}
 }
@@ -231,8 +231,8 @@ func (log *Logger) Panic(msg string, fields ...zapcore.Field) {
 //
 // The logger then calls os.Exit(1), even if logging at FatalLevel is
 // disabled.
-func (log *Logger) Fatal(msg string, fields ...zapcore.Field) {
-	if ce := log.check(FatalLevel, msg); ce != nil {
+func (log *Logger) Fatal(caller *zapcore.EntryCaller, msg string, fields ...zapcore.Field) {
+	if ce := log.check(FatalLevel, msg, caller); ce != nil {
 		ce.Write(fields...)
 	}
 }
@@ -253,10 +253,10 @@ func (log *Logger) clone() *Logger {
 	return &copy
 }
 
-func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
+func (log *Logger) check(lvl zapcore.Level, msg string, caller *zapcore.EntryCaller) *zapcore.CheckedEntry {
 	// check must always be called directly by a method in the Logger interface
 	// (e.g., Check, Info, Fatal).
-	const callerSkipOffset = 2
+	const callerSkipOffset = 0
 
 	// Create basic checked entry thru the core; this will be non-nil if the
 	// log message will actually be written somewhere.
@@ -290,7 +290,7 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 
 	// Thread the error output through to the CheckedEntry.
 	ce.ErrorOutput = log.errorOutput
-	if log.addCaller {
+	if log.addCaller && caller == nil {
 		ce.Entry.Caller = zapcore.NewEntryCaller(runtime.Caller(log.callerSkip + callerSkipOffset))
 		if !ce.Entry.Caller.Defined {
 			fmt.Fprintf(log.errorOutput, "%v Logger.check error: failed to get caller\n", time.Now().UTC())

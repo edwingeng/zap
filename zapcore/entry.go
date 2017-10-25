@@ -56,11 +56,11 @@ func putCheckedEntry(ce *CheckedEntry) {
 
 // NewEntryCaller makes an EntryCaller from the return signature of
 // runtime.Caller.
-func NewEntryCaller(pc uintptr, file string, line int, ok bool) EntryCaller {
+func NewEntryCaller(pc uintptr, file string, line int, ok bool) *EntryCaller {
 	if !ok {
-		return EntryCaller{}
+		return &EntryCaller{}
 	}
-	return EntryCaller{
+	return &EntryCaller{
 		PC:      pc,
 		File:    file,
 		Line:    line,
@@ -77,13 +77,13 @@ type EntryCaller struct {
 }
 
 // String returns the full path and line number of the caller.
-func (ec EntryCaller) String() string {
+func (ec *EntryCaller) String() string {
 	return ec.FullPath()
 }
 
 // FullPath returns a /full/path/to/package/file:line description of the
 // caller.
-func (ec EntryCaller) FullPath() string {
+func (ec *EntryCaller) FullPath() string {
 	if !ec.Defined {
 		return "undefined"
 	}
@@ -98,7 +98,7 @@ func (ec EntryCaller) FullPath() string {
 
 // TrimmedPath returns a package/file:line description of the caller,
 // preserving only the leaf directory name and file name.
-func (ec EntryCaller) TrimmedPath() string {
+func (ec *EntryCaller) TrimmedPath() string {
 	if !ec.Defined {
 		return "undefined"
 	}
@@ -145,7 +145,7 @@ type Entry struct {
 	Time       time.Time
 	LoggerName string
 	Message    string
-	Caller     EntryCaller
+	Caller     *EntryCaller
 	Stack      string
 }
 

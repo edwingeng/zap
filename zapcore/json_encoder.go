@@ -318,7 +318,7 @@ func (enc *jsonEncoder) EncodeEntry(ent Entry, fields []Field) (*buffer.Buffer, 
 			final.AppendString(ent.LoggerName)
 		}
 	}
-	if ent.Caller.Defined && final.CallerKey != "" {
+	if ent.Caller != nil && ent.Caller.Defined && final.CallerKey != "" {
 		final.addKey(final.CallerKey)
 		cur := final.buf.Len()
 		final.EncodeCaller(ent.Caller, final)

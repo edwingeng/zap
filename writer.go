@@ -26,6 +26,8 @@ import (
 
 	"go.uber.org/zap/zapcore"
 
+	"strings"
+
 	"go.uber.org/multierr"
 )
 
@@ -36,13 +38,14 @@ import (
 //
 // Passing no paths returns a no-op WriteSyncer. The special paths "stdout" and
 // "stderr" are interpreted as os.Stdout and os.Stderr, respectively.
-func Open(paths ...string) (zapcore.WriteSyncer, func(), error) {
+func Open(additionalWriters []zapcore.WriteSyncer, paths ...string) (zapcore.WriteSyncer, func(), error) {
 	writers, close, err := open(paths)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	writer := CombineWriteSyncers(writers...)
+	allWriters := append(writers, additionalWriters...)
+	writer := CombineWriteSyncers(allWriters...)
 	return writer, close, nil
 }
 
@@ -64,6 +67,9 @@ func open(paths []string) ([]zapcore.WriteSyncer, func(), error) {
 		case "stderr":
 			writers = append(writers, os.Stderr)
 			// Don't close standard error.
+			continue
+		}
+		if strings.Contains(path, "*") {
 			continue
 		}
 		f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)

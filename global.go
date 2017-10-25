@@ -75,7 +75,7 @@ func ReplaceGlobals(logger *Logger) func() {
 // functions, use RedirectStdLog instead.
 func NewStdLog(l *Logger) *log.Logger {
 	logger := l.WithOptions(AddCallerSkip(_stdLogDefaultDepth + _loggerWriterDepth))
-	f := logger.Info
+	f := func(msg string, fields ...zapcore.Field) { logger.Info(nil, msg, fields...) }
 	return log.New(&loggerWriter{f}, "" /* prefix */, 0 /* flags */)
 }
 
@@ -86,19 +86,19 @@ func NewStdLogAt(l *Logger, level zapcore.Level) (*log.Logger, error) {
 	var logFunc func(string, ...zapcore.Field)
 	switch level {
 	case DebugLevel:
-		logFunc = logger.Debug
+		logFunc = func(msg string, fields ...zapcore.Field) { logger.Debug(nil, msg, fields...) }
 	case InfoLevel:
-		logFunc = logger.Info
+		logFunc = func(msg string, fields ...zapcore.Field) { logger.Info(nil, msg, fields...) }
 	case WarnLevel:
-		logFunc = logger.Warn
+		logFunc = func(msg string, fields ...zapcore.Field) { logger.Warn(nil, msg, fields...) }
 	case ErrorLevel:
-		logFunc = logger.Error
+		logFunc = func(msg string, fields ...zapcore.Field) { logger.Error(nil, msg, fields...) }
 	case DPanicLevel:
-		logFunc = logger.DPanic
+		logFunc = func(msg string, fields ...zapcore.Field) { logger.DPanic(nil, msg, fields...) }
 	case PanicLevel:
-		logFunc = logger.Panic
+		logFunc = func(msg string, fields ...zapcore.Field) { logger.Panic(nil, msg, fields...) }
 	case FatalLevel:
-		logFunc = logger.Fatal
+		logFunc = func(msg string, fields ...zapcore.Field) { logger.Fatal(nil, msg, fields...) }
 	default:
 		return nil, fmt.Errorf("unrecognized level: %q", level)
 	}
@@ -120,7 +120,8 @@ func RedirectStdLog(l *Logger) func() {
 	logFunc := l.WithOptions(
 		AddCallerSkip(_stdLogDefaultDepth + _loggerWriterDepth),
 	).Info
-	log.SetOutput(&loggerWriter{logFunc})
+	f := func(msg string, fields ...zapcore.Field) { logFunc(nil, msg, fields...) }
+	log.SetOutput(&loggerWriter{f})
 	return func() {
 		log.SetFlags(flags)
 		log.SetPrefix(prefix)

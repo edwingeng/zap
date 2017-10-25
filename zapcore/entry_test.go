@@ -59,7 +59,7 @@ func TestPutNilEntry(t *testing.T) {
 
 func TestEntryCaller(t *testing.T) {
 	tests := []struct {
-		caller EntryCaller
+		caller *EntryCaller
 		full   string
 		short  string
 	}{

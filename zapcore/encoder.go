@@ -168,20 +168,24 @@ func (e *DurationEncoder) UnmarshalText(text []byte) error {
 }
 
 // A CallerEncoder serializes an EntryCaller to a primitive type.
-type CallerEncoder func(EntryCaller, PrimitiveArrayEncoder)
+type CallerEncoder func(*EntryCaller, PrimitiveArrayEncoder)
 
 // FullCallerEncoder serializes a caller in /full/path/to/package/file:line
 // format.
-func FullCallerEncoder(caller EntryCaller, enc PrimitiveArrayEncoder) {
+func FullCallerEncoder(caller *EntryCaller, enc PrimitiveArrayEncoder) {
 	// TODO: consider using a byte-oriented API to save an allocation.
-	enc.AppendString(caller.String())
+	if caller != nil {
+		enc.AppendString(caller.String())
+	}
 }
 
 // ShortCallerEncoder serializes a caller in package/file:line format, trimming
 // all but the final directory from the full path.
-func ShortCallerEncoder(caller EntryCaller, enc PrimitiveArrayEncoder) {
+func ShortCallerEncoder(caller *EntryCaller, enc PrimitiveArrayEncoder) {
 	// TODO: consider using a byte-oriented API to save an allocation.
-	enc.AppendString(caller.TrimmedPath())
+	if caller != nil {
+		enc.AppendString(caller.TrimmedPath())
+	}
 }
 
 // UnmarshalText unmarshals text to a CallerEncoder. "full" is unmarshaled to
