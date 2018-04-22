@@ -79,7 +79,3 @@ func (mc multiCore) Sync() error {
 	}
 	return err
 }
-
-func (mc multiCore) SetWriteSyncer(ws WriteSyncer) {
-	// Empty
-}

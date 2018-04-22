@@ -42,9 +42,6 @@ type Core interface {
 	Write(Entry, []Field) error
 	// Sync flushes buffered logs (if any).
 	Sync() error
-
-	// NOT thread-safe
-	SetWriteSyncer(ws WriteSyncer)
 }
 
 type nopCore struct{}
@@ -56,7 +53,6 @@ func (n nopCore) With([]Field) Core                           { return n }
 func (nopCore) Check(_ Entry, ce *CheckedEntry) *CheckedEntry { return ce }
 func (nopCore) Write(Entry, []Field) error                    { return nil }
 func (nopCore) Sync() error                                   { return nil }
-func (nopCore) SetWriteSyncer(ws WriteSyncer)                 {}
 
 // NewCore creates a Core that writes logs to a WriteSyncer.
 func NewCore(enc Encoder, ws WriteSyncer, enab LevelEnabler) Core {
@@ -114,8 +110,4 @@ func (c *ioCore) clone() *ioCore {
 		enc:          c.enc.Clone(),
 		out:          c.out,
 	}
-}
-
-func (c *ioCore) SetWriteSyncer(ws WriteSyncer) {
-	c.out = ws
 }
