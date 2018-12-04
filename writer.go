@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"go.uber.org/zap/zapcore"
 
@@ -48,13 +49,14 @@ import (
 // a scheme, the special paths "stdout" and "stderr" are interpreted as
 // os.Stdout and os.Stderr. When specified without a scheme, relative file
 // paths also work.
-func Open(paths ...string) (zapcore.WriteSyncer, func(), error) {
+func Open(additionalWriters []zapcore.WriteSyncer, paths ...string) (zapcore.WriteSyncer, func(), error) {
 	writers, close, err := open(paths)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	writer := CombineWriteSyncers(writers...)
+	allWriters := append(writers, additionalWriters...)
+	writer := CombineWriteSyncers(allWriters...)
 	return writer, close, nil
 }
 
@@ -69,6 +71,9 @@ func open(paths []string) ([]zapcore.WriteSyncer, func(), error) {
 
 	var openErr error
 	for _, path := range paths {
+		if strings.Contains(path, "*") {
+			continue
+		}
 		sink, err := newSink(path)
 		if err != nil {
 			openErr = multierr.Append(openErr, fmt.Errorf("couldn't open sink %q: %v", path, err))

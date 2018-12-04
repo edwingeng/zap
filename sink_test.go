@@ -58,6 +58,7 @@ func TestRegisterSink(t *testing.T) {
 	require.NoError(t, RegisterSink(nopScheme, nopFactory), "Failed to register scheme %q.", memScheme)
 
 	sink, close, err := Open(
+		nil,
 		memScheme+"://somewhere",
 		nopScheme+"://somewhere-else",
 	)

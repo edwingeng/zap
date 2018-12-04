@@ -39,7 +39,7 @@ var (
 		Message:    `hello`,
 		Time:       _epoch,
 		Stack:      "fake-stack",
-		Caller:     EntryCaller{Defined: true, File: "foo.go", Line: 42},
+		Caller:     &EntryCaller{Defined: true, File: "foo.go", Line: 42},
 	}
 )
 
@@ -412,7 +412,7 @@ func TestEncoderConfiguration(t *testing.T) {
 				EncodeTime:     base.EncodeTime,
 				EncodeDuration: base.EncodeDuration,
 				EncodeLevel:    base.EncodeLevel,
-				EncodeCaller:   func(EntryCaller, PrimitiveArrayEncoder) {},
+				EncodeCaller:   func(*EntryCaller, PrimitiveArrayEncoder) {},
 			},
 			expectedJSON:    `{"L":"info","T":0,"N":"main","C":"foo.go:42","M":"hello","S":"fake-stack"}` + "\n",
 			expectedConsole: "0\tinfo\tmain\thello\nfake-stack\n",
@@ -579,7 +579,7 @@ func TestDurationEncoders(t *testing.T) {
 }
 
 func TestCallerEncoders(t *testing.T) {
-	caller := EntryCaller{Defined: true, File: "/home/jack/src/github.com/foo/foo.go", Line: 42}
+	caller := &EntryCaller{Defined: true, File: "/home/jack/src/github.com/foo/foo.go", Line: 42}
 	tests := []struct {
 		name     string
 		expected interface{} // output of serializing caller

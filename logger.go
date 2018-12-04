@@ -172,6 +172,10 @@ func (log *Logger) Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 	return log.check(lvl, msg)
 }
 
+func (log *Logger) CheckWithCaller(lvl zapcore.Level, msg string, caller *zapcore.EntryCaller) *zapcore.CheckedEntry {
+	return log.checkWithCaller(lvl, msg, caller)
+}
+
 // Debug logs a message at DebugLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
 func (log *Logger) Debug(msg string, fields ...Field) {
@@ -254,9 +258,13 @@ func (log *Logger) clone() *Logger {
 }
 
 func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
+	return log.checkWithCaller(lvl, msg, nil)
+}
+
+func (log *Logger) checkWithCaller(lvl zapcore.Level, msg string, caller *zapcore.EntryCaller) *zapcore.CheckedEntry {
 	// check must always be called directly by a method in the Logger interface
 	// (e.g., Check, Info, Fatal).
-	const callerSkipOffset = 2
+	const callerSkipOffset = 3
 
 	// Create basic checked entry thru the core; this will be non-nil if the
 	// log message will actually be written somewhere.
@@ -290,7 +298,7 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 
 	// Thread the error output through to the CheckedEntry.
 	ce.ErrorOutput = log.errorOutput
-	if log.addCaller {
+	if log.addCaller && caller == nil {
 		ce.Entry.Caller = zapcore.NewEntryCaller(runtime.Caller(log.callerSkip + callerSkipOffset))
 		if !ce.Entry.Caller.Defined {
 			fmt.Fprintf(log.errorOutput, "%v Logger.check error: failed to get caller\n", time.Now().UTC())

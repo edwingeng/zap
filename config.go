@@ -74,6 +74,8 @@ type Config struct {
 	// EncoderConfig sets options for the chosen encoder. See
 	// zapcore.EncoderConfig for details.
 	EncoderConfig zapcore.EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
+	// AdditionalWriters is list of custom log writers.
+	AdditionalWriters []zapcore.WriteSyncer
 	// OutputPaths is a list of URLs or file paths to write logging output to.
 	// See Open for details.
 	OutputPaths []string `json:"outputPaths" yaml:"outputPaths"`
@@ -226,11 +228,11 @@ func (cfg Config) buildOptions(errSink zapcore.WriteSyncer) []Option {
 }
 
 func (cfg Config) openSinks() (zapcore.WriteSyncer, zapcore.WriteSyncer, error) {
-	sink, closeOut, err := Open(cfg.OutputPaths...)
+	sink, closeOut, err := Open(cfg.AdditionalWriters, cfg.OutputPaths...)
 	if err != nil {
 		return nil, nil, err
 	}
-	errSink, _, err := Open(cfg.ErrorOutputPaths...)
+	errSink, _, err := Open(nil, cfg.ErrorOutputPaths...)
 	if err != nil {
 		closeOut()
 		return nil, nil, err

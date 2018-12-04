@@ -216,9 +216,13 @@ func (s *SugaredLogger) Sync() error {
 }
 
 func (s *SugaredLogger) log(lvl zapcore.Level, template string, fmtArgs []interface{}, context []interface{}) {
+	SugaredLog(s.base, lvl, template, fmtArgs, context, nil)
+}
+
+func SugaredLog(l *Logger, lvl zapcore.Level, template string, fmtArgs []interface{}, context []interface{}, caller *zapcore.EntryCaller) {
 	// If logging at this level is completely disabled, skip the overhead of
 	// string formatting.
-	if lvl < DPanicLevel && !s.base.Core().Enabled(lvl) {
+	if lvl < DPanicLevel && !l.Core().Enabled(lvl) {
 		return
 	}
 
@@ -230,12 +234,24 @@ func (s *SugaredLogger) log(lvl zapcore.Level, template string, fmtArgs []interf
 		msg = fmt.Sprintf(template, fmtArgs...)
 	}
 
-	if ce := s.base.Check(lvl, msg); ce != nil {
-		ce.Write(s.sweetenFields(context)...)
+	if caller != nil {
+		if ce := l.CheckWithCaller(lvl, msg, caller); ce != nil {
+			ce.Caller = caller
+			ce.Write(SweetenFields(l, context)...)
+		}
+		return
+	}
+
+	if ce := l.Check(lvl, msg); ce != nil {
+		ce.Write(SweetenFields(l, context)...)
 	}
 }
 
 func (s *SugaredLogger) sweetenFields(args []interface{}) []Field {
+	return SweetenFields(s.base, args)
+}
+
+func SweetenFields(l *Logger, args []interface{}) []Field {
 	if len(args) == 0 {
 		return nil
 	}
@@ -255,7 +271,7 @@ func (s *SugaredLogger) sweetenFields(args []interface{}) []Field {
 
 		// Make sure this element isn't a dangling key.
 		if i == len(args)-1 {
-			s.base.DPanic(_oddNumberErrMsg, Any("ignored", args[i]))
+			l.DPanic(_oddNumberErrMsg, Any("ignored", args[i]))
 			break
 		}
 
@@ -276,7 +292,7 @@ func (s *SugaredLogger) sweetenFields(args []interface{}) []Field {
 
 	// If we encountered any invalid key-value pairs, log an error.
 	if len(invalid) > 0 {
-		s.base.DPanic(_nonStringKeyErrMsg, Array("invalid", invalid))
+		l.DPanic(_nonStringKeyErrMsg, Array("invalid", invalid))
 	}
 	return fields
 }

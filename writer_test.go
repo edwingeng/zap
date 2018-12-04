@@ -37,7 +37,7 @@ import (
 )
 
 func TestOpenNoPaths(t *testing.T) {
-	ws, cleanup, err := Open()
+	ws, cleanup, err := Open(nil)
 	defer cleanup()
 
 	assert.NoError(t, err, "Expected opening no paths to succeed.")
@@ -82,7 +82,7 @@ func TestOpen(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_, cleanup, err := Open(tt.paths...)
+		_, cleanup, err := Open(nil, tt.paths...)
 		if err == nil {
 			defer cleanup()
 		}
@@ -105,7 +105,7 @@ func TestOpenRelativePath(t *testing.T) {
 	const name = "test-relative-path.txt"
 
 	require.False(t, fileExists(name), "Test file already exists.")
-	s, cleanup, err := Open(name)
+	s, cleanup, err := Open(nil, name)
 	require.NoError(t, err, "Open failed.")
 	defer func() {
 		err := os.Remove(name)
@@ -132,7 +132,7 @@ func TestOpenFails(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_, cleanup, err := Open(tt.paths...)
+		_, cleanup, err := Open(nil, tt.paths...)
 		require.Nil(t, cleanup, "Cleanup function should never be nil")
 		assert.Error(t, err, "Open with invalid URL should fail.")
 	}
@@ -161,7 +161,7 @@ func TestOpenWithErroringSinkFactory(t *testing.T) {
 	}
 
 	assert.NoError(t, RegisterSink("test", factory), "Failed to register sink factory.")
-	_, _, err := Open("test://some/path")
+	_, _, err := Open(nil, "test://some/path")
 	assert.Contains(t, err.Error(), msg, "Unexpected error.")
 }
 
